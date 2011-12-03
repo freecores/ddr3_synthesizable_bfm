@@ -18,7 +18,7 @@
 * USA
 *
 *
-*  simple implementation of DDR3 Memory
+*  Simple implementation of DDR3 Memory
 *  will only reponse to write and read request
 *  parameter
 *  count start from t0,t2,t2...
@@ -28,9 +28,6 @@
 *
 *        |   |    |
 *        t0  t1  t2 ....
-*
-*2/12/2011: not able to handle multiple bank opening
-*2/12/2011: not using DM signals
 *
 */
 
