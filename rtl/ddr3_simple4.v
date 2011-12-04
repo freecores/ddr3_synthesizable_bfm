@@ -39,9 +39,9 @@ parameter MEM_DQ_WIDTH 		=8,
 parameter MEM_BA_WIDTH 		=3,
 parameter MEM_ROW_WIDTH 	=13,
 parameter MEM_COL_WIDTH		=13,
-parameter MEM_AL		=0,
-parameter MEM_CWL		=8, //CWL
-parameter MEM_CL		=6  //CL
+parameter AL		=3,
+parameter CWL		=5, //CWL
+parameter CL		=5  //CL=6 -> pass
 )(
 input wire [MEM_ROW_WIDTH-1:0]	a,
 input wire [ MEM_BA_WIDTH-1:0]	ba,
@@ -61,6 +61,8 @@ input wire			odt
 );
 
 //convert actual CL and CWL parameter to 
+localparam  MEM_CWL=CWL+AL;
+localparam  MEM_CL =CL+AL;
 
 //definitions
 localparam	OPCODE_PRECHARGE = 4'b0010;
