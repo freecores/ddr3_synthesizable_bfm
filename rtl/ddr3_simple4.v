@@ -504,8 +504,50 @@ begin
 									endcase
 								end//end MR0
 								2'b01:begin //MR1
+									case(a[0]) //DLL Enable
+										1'b0:$display("%m\tDLL = Enabled");
+										1'b1:$display("%m\tDLL = Disabled");
+									endcase 
+									case({a[5],a[1]}) //Output driver impedence
+										2'b00:$display("%m\tOutput Driver = RQZ/6(RQZ=240 Ohm)");
+										2'b01:$display("%m\tOutput Driver = RQZ/7(RQZ=240 Ohm)");
+										2'b10:$display("%m\tOutput Driver = Reserved");
+										2'b11:$display("%m\tOutput Driver = Reserved");
+									endcase
+									case({a[9],a[6],a[2]})
+										3'b000:$display("%m\tRTT Nom = RTT Nom Disabled");
+										3'b001:$display("%m\tRTT Nom = RZQ/4(RZQ=240 Ohm)");
+										3'b010:$display("%m\tRTT Nom = RZQ/2(RZQ=240 Ohm)");
+										3'b011:$display("%m\tRTT Nom = RZQ/6(RZQ=240 Ohm)");
+										3'b100:$display("%m\tRTT Nom = RZQ/12(RZQ=240 Ohm)");
+										3'b101:$display("%m\tRTT Nom = RZQ/8(RZQ=240 Ohm)");
+										3'b110:$display("%m\tRTT Nom = Reserved");
+										3'b111:$display("%m\tRTT Nom = Reserved");																		
+									endcase
+									case(a[4:3]) //Additive Latency
+										2'b00:$display("%m\tAL = 0(Disabled)");
+										2'b01:$display("%m\tAL = CL-1");
+										2'b10:$display("%m\tAL = CL-2");
+										2'b11:$display("%m\tAL = Reserved");
+									endcase
 								end//end MR1
 								2'b10:begin //MR2
+									case(a[5:3])
+										3'b000:$display("%m\tCWL = 5");
+										3'b001:$display("%m\tCWL = 6");
+										3'b010:$display("%m\tCWL = 7");
+										3'b011:$display("%m\tCWL = 8");
+										3'b100:$display("%m\tCWL = 9");
+										3'b101:$display("%m\tCWL = 10");
+										3'b110:$display("%m\tCWL = 11");
+										3'b111:$display("%m\tCWL = 12");
+									endcase
+									case(a[10:9])
+									2'b00:$display("%m\tDynamic ODT Off");
+									2'b00:$display("%m\tRTT WR = RZQ/4(RQZ=240 Ohm)");
+									2'b00:$display("%m\tRTT WR = RZQ/2(RQZ=240 Ohm)");
+									2'b00:$display("%m\tRTT WR = Reserved");
+									endcase
 								end//end MR2
 								2'b11:begin //MR3
 								end//end MR3
