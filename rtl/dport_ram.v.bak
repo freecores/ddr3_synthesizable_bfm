@@ -38,8 +38,8 @@ module dport_ram
 	input 						 we, 
 	output reg [(DATA_WIDTH-1):0] do
 );
-localparam ACTUAL_ADDR_WIDTH=16; //due to small size of internal memory
-//localparam ACTUAL_ADDR_WIDTH=26; //due to small size of internal memory
+//localparam ACTUAL_ADDR_WIDTH=16; //due to small size of internal memory
+localparam ACTUAL_ADDR_WIDTH=23; //due to small size of internal memory
 wire [ACTUAL_ADDR_WIDTH-1:0]ACTUAL_WRITE_ADDR;
 wire [ACTUAL_ADDR_WIDTH-1:0]ACTUAL_READ_ADDR;
 												//bank            row               col

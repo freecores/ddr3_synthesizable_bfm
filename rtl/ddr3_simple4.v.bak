@@ -29,7 +29,6 @@
 *        |   |    |
 *        t0  t1  t2 ....
 *
-*
 */
 
 `timescale 1ps / 1ps
@@ -39,39 +38,44 @@ parameter MEM_DQ_WIDTH 		=8,
 parameter MEM_BA_WIDTH 		=3,
 parameter MEM_ROW_WIDTH 	=13,
 parameter MEM_COL_WIDTH		=13,
-parameter MEM_AL		=0,
-parameter MEM_CWL		=8, //CWL
-parameter MEM_CL		=6  //CL
+parameter MEM_TRTP 			=6,
+parameter MEM_TRCD 			=11,
+parameter MEM_TWL				=8,
+parameter MEM_TRL				=6,
+parameter MEM_ACT_CMD		=7 //activates to command
 )(
 input wire [MEM_ROW_WIDTH-1:0]	a,
 input wire [ MEM_BA_WIDTH-1:0]	ba,
-input wire			ck,
-input wire 			ck_n,
-input wire 			cke,
-input wire			cs_n,
-input wire			dm,     
-input wire			ras_n,   
-input wire			cas_n,   
-input wire			we_n,    
-input wire			reset_n, 
-inout wire [MEM_DQ_WIDTH-1:0]	dq,      
-inout wire			dqs,     
-inout wire			dqs_n,   
-input wire			odt      
+input wire								ck,
+input wire 								ck_n,
+input wire 								cke,
+input wire								cs_n,
+input wire								dm,     
+input wire								ras_n,   
+input wire								cas_n,   
+input wire								we_n,    
+input wire								reset_n, 
+inout wire	[MEM_DQ_WIDTH-1:0]	dq,      
+inout wire								dqs,     
+inout wire								dqs_n,   
+input wire								odt      
 );
 
-//convert actual CL and CWL parameter to 
 
 //definitions
-localparam	OPCODE_PRECHARGE = 4'b0010;
-localparam	OPCODE_ACTIVATE  = 4'b0011;
-localparam	OPCODE_WRITE 	 = 4'b0100;
-localparam	OPCODE_READ 	 = 4'b0101;
-localparam	OPCODE_MRS 	 = 4'b0000;
-localparam	OPCODE_REFRESH 	 = 4'b0001;
-localparam	OPCODE_DES 	 = 4'b1000;
-localparam	OPCODE_ZQC 	 = 4'b0110;
-localparam	OPCODE_NOP 	 = 4'b0111;
+localparam	   OPCODE_PRECHARGE 		= 4'b0010;
+localparam		OPCODE_ACTIVATE 		= 4'b0011;
+localparam		OPCODE_WRITE 		  	= 4'b0100;
+localparam		OPCODE_READ 		   = 4'b0101;
+localparam		OPCODE_MRS 			   = 4'b0000;
+localparam		OPCODE_REFRESH 	 	= 4'b0001;
+localparam		OPCODE_DES 			   = 4'b1000;
+localparam		OPCODE_ZQC 			   = 4'b0110;
+localparam		OPCODE_NOP 			   = 4'b0111;
+
+localparam  BL8 = 1'b1;
+localparam  BC4 = 1'b0;
+
 
 //mode registers
 reg [31:0] mr0;
@@ -104,8 +108,8 @@ reg  [MEM_DQ_WIDTH-1:0]  dq_in0;
 
 (* keep *) wire [MEM_DQ_WIDTH-1:0] data_hi; 
 (* keep *) wire [MEM_DQ_WIDTH-1:0] data_lo;
-(* keep *) wire			  data_hi_dm; 
-(* keep *) wire 		  data_lo_dm;
+(* keep *) wire						  data_hi_dm; 
+(* keep *) wire 						  data_lo_dm;
 //IDDR
 my_iddrx8 iddrx8_inst(
 	.clk(ck),
@@ -142,39 +146,39 @@ begin
 	case({cs_n,ras_n,cas_n,we_n})
 	/*
 	OPCODE_PRECHARGE	:begin
-					$display("t=%d,PRECHARGE",vip_clk);
-				end
+								$display("t=%d,PRECHARGE",vip_clk);
+							end
 	*/
 	OPCODE_ACTIVATE  	:begin								
-					opened_row [ba] <={{(16-MEM_ROW_WIDTH){1'b0}},a[MEM_ROW_WIDTH-1:0]};
-				end
+								opened_row [ba] <={{(16-MEM_ROW_WIDTH){1'b0}},a[MEM_ROW_WIDTH-1:0]};
+							end
 	/*						
-	OPCODE_DES		:begin
-					$display("t=%d,DES",vip_clk);
-				end
+	OPCODE_DES			:begin
+								$display("t=%d,DES",vip_clk);
+							end
 	OPCODE_MRS  		:begin
-					$display("t=%d,MRS",vip_clk);
-				end
+								$display("t=%d,MRS",vip_clk);
+							end
 	OPCODE_NOP  		:begin
-					//$display("t=%d,NOP",vip_clk);
-				end
+								//$display("t=%d,NOP",vip_clk);
+							end
 	*/
 	OPCODE_READ  		:begin							
-					last_read_add 	<={ba,opened_row[ba],{{(16-MEM_COL_WIDTH){1'b0}},a[MEM_COL_WIDTH-1:0]}};								
-					last_read_cmd 	<=OPCODE_READ;
-				end
+								last_read_add 	<={ba,opened_row[ba],{{(16-MEM_COL_WIDTH){1'b0}},a[MEM_COL_WIDTH-1:0]}};								
+								last_read_cmd 	<=OPCODE_READ;
+							end
 	OPCODE_WRITE  		:begin
-					last_write_add  <={ba,opened_row[ba],{{(16-MEM_COL_WIDTH){1'b0}},a[MEM_COL_WIDTH-1:0]}};
-					last_write_cmd  <=OPCODE_WRITE;
-				end
+								last_write_add  <={ba,opened_row[ba],{{(16-MEM_COL_WIDTH){1'b0}},a[MEM_COL_WIDTH-1:0]}};
+								last_write_cmd  <=OPCODE_WRITE;
+							end
 							/*
-	OPCODE_ZQC		:begin
-				$display("t=%d,ZQC",vip_clk);
-					end*/
+	OPCODE_ZQC			:begin
+								$display("t=%d,ZQC",vip_clk);
+							end*/
 		default:begin
 				last_read_cmd 	<=OPCODE_NOP;
 				last_write_cmd <=OPCODE_NOP;
-			end
+				end
 	endcase
 end // end reset	
 end // end always@(*)
@@ -184,7 +188,7 @@ end // end always@(*)
 //cmd
 //read
 ddr3_sr4 #(
-.PIPE_LEN(MEM_CL)
+.PIPE_LEN(MEM_TRL)
 )ddr3_read_cmd_sr(
 	.clk(ck),
 	.shift_in(last_read_cmd),
@@ -192,7 +196,7 @@ ddr3_sr4 #(
 );
 //bank, row, col
 ddr3_sr36 #(
-.PIPE_LEN(MEM_CL+1)
+.PIPE_LEN(MEM_TRL+1)
 )ddr3_read_add_sr(
 	.clk(ck),
 	.shift_in(last_read_add),
@@ -202,7 +206,7 @@ ddr3_sr36 #(
 //cmd
 //write
 ddr3_sr4#(
-.PIPE_LEN(MEM_CWL)
+.PIPE_LEN(MEM_TWL)
 )ddr3_write_cmd_sr(
 	.clk(ck),
 	.shift_in(last_write_cmd),
@@ -211,7 +215,7 @@ ddr3_sr4#(
 
 //bank, row, col
 ddr3_sr36#(
-.PIPE_LEN(MEM_CWL+1) //have to be a cycle late to wait for IDDR latency
+.PIPE_LEN(MEM_TWL+1) //have to be a cycle late to wait for IDDR latency
 ) ddr3_write_add_sr(
 	.clk(ck),
 	.shift_in(last_write_add),
@@ -223,8 +227,8 @@ ddr3_sr36#(
 localparam WR_D0	=4'd0;
 localparam WR_D1	=4'd1;
 localparam WR_D2	=4'd2;
-localparam WR_D3	=4'd3;
-localparam WR_IDLE	=4'd5;
+localparam WR_D3  =4'd3;
+localparam WR_IDLE=4'd5;
 reg [3:0] write_state;
 reg 		 mem_we;
 reg [2:0] write_col;
@@ -305,8 +309,8 @@ end
 localparam RD_D0	=4'd0;
 localparam RD_D1	=4'd1;
 localparam RD_D2	=4'd2;
-localparam RD_D3  	=4'd3;
-localparam RD_IDLE	=4'd5;
+localparam RD_D3  =4'd3;
+localparam RD_IDLE=4'd5;
 
 reg [3:0] read_state;
 reg [2:0] read_col;
@@ -414,7 +418,7 @@ end//end always
 
 //ram here
 dport_ram  #(
-	.DATA_WIDTH(MEM_DQ_WIDTH), //data_hi,data_lo
+	.DATA_WIDTH(8), //data_hi,data_lo
 	.ADDR_WIDTH(36)
 )dport_ram_hi(
 	.clk			(ck),
@@ -426,7 +430,7 @@ dport_ram  #(
 );
 
 dport_ram  #(
-	.DATA_WIDTH(MEM_DQ_WIDTH), //data_hi,data_lo
+	.DATA_WIDTH(8), //data_hi,data_lo
 	.ADDR_WIDTH(36)
 )dport_ram_lo(
 	.clk			(ck),
@@ -442,7 +446,6 @@ assign dq   = (send_dq==1'b1)?dq_out:8'hZZ;
 
 /* utility functions to display information
 */
-
 initial begin
         $timeformat (-9, 1, " ns", 1);
       end
@@ -452,82 +455,34 @@ begin
 	case({cs_n,ras_n,cas_n,we_n})
 
 	OPCODE_PRECHARGE	:begin
-					$display("%m: at time %t PRECHARGE ",$time);
-				end
+								$display("%m: at time %t PRECHARGE ",$time);
+							end
 	
 	OPCODE_ACTIVATE  	:begin
-					$display("%m: at time %t ACTIVATE - BANK[%x]\tROW[%x]",$time,ba,a);
-				end
+								$display("%m: at time %t ACTIVATE - BANK[%x]\tROW[%x]",$time,ba,a);
+							end
 						
-	OPCODE_DES		:begin
-					$display("%m: at time %t DES ",$time);
-				end
-	OPCODE_MRS  	:begin
-							$display("%m: at time %t MRS - MR[%d]",$time,ba[1:0]);
-							case(ba[1:0])
-								2'b00:begin //MR0
-									case(a[1:0]) // burst length
-										2'b00:$display("%m\tBL = BL8 \(Fixed\)");
-										2'b01:$display("%m\tBL = BC4/BL8 OTF");
-										2'b10:$display("%m\tBL = BC4 (Fixed)");
-										2'b11:$display("%m\tBL = Reserved");
-									endcase	
-									
-									case({a[6:4],a[2]}) //CAS Latency
-										4'b0000:$display("%m\tCL = Reserved");	
-										4'b0010:$display("%m\tCL = 5");	
-										4'b0100:$display("%m\tCL = 6");	
-										4'b0110:$display("%m\tCL = 7");	
-										4'b1000:$display("%m\tCL = 8");	
-										4'b1010:$display("%m\tCL = 9");	
-										4'b1100:$display("%m\tCL = 10");	
-										4'b1111:$display("%m\tCL = 11(Optional for DD3-1600)");	
-										4'b0001:$display("%m\tCL = 12");
-										4'b0011:$display("%m\tCL = 13");	
-										4'b0101:$display("%m\tCL = 14");	
-										4'b0111:$display("%m\tCL = Reserved for 15");	
-										4'b1001:$display("%m\tCL = Reserved for 16");	
-										4'b1011:$display("%m\tCL = Reserved");	
-										4'b1101:$display("%m\tCL = Reserved");	
-										4'b1111:$display("%m\tCL = Reserved");											
-									endcase
-									
-									case(a[11:9]) //Write Recover
-										3'b000:$display("%m\tWR = 16^2(256 cycles)");
-										3'b001:$display("%m\tWR =  5^2( 25 cycles)");										
-										3'b010:$display("%m\tWR =  6^2( 36 cycles)");
-										3'b011:$display("%m\tWR =  7^2( 49 cycles)");
-										3'b100:$display("%m\tWR =  8^2( 64 cycles)");
-										3'b101:$display("%m\tWR = 10^2(100 cycles)");
-										3'b110:$display("%m\tWR = 12^2(144 cycles)");
-										3'b111:$display("%m\tWR = 14^2(196 cycles)");
-									endcase
-								end//end MR0
-								2'b01:begin //MR1
-								end//end MR1
-								2'b10:begin //MR2
-								end//end MR2
-								2'b11:begin //MR3
-								end//end MR3
-							endcase //end which MRS
-						
-					
-						end //end MRS
+	OPCODE_DES			:begin
+								$display("%m: at time %t DES ",$time);
+							end
+	OPCODE_MRS  		:begin
+								$display("%m: at time %t MRS ",$time);
+							end
 	/*OPCODE_NOP  		:begin
-					/$display("%m: at time %t WRITE ",$time);
-				end
+								/$display("%m: at time %t WRITE ",$time);
+							end
 	*/
 	/*
 	OPCODE_READ  		:begin
-					$display("%m: at time %t READ - BANK[%x]\tROW[%x]\tCOL[%x]",$time,ba,last_row,a);
-				end
+								$display("%m: at time %t READ - BANK[%x]\tROW[%x]\tCOL[%x]",$time,ba,last_row,a);
+							end
 	OPCODE_WRITE  		:begin
-					$display("%m: at time %t WRITE - BANK[%x]\tROW[%x],\tCOL[%x]",$time,ba,last_row,a);
-				end
+								$display("%m: at time %t WRITE - BANK[%x]\tROW[%x],\tCOL[%x]",$time,ba,last_row,a);
+							end
 	*/						
-	OPCODE_ZQC		:begin
-					$display("%m: at time %t ZQC ",$time);
-				end
+	OPCODE_ZQC			:begin
+								$display("%m: at time %t ZQC ",$time);
+							end
 	endcase
 
 end // end always@(*)
